@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ひらがな Cartas — Aprenda Hiragana Jogando</title>
+  <meta name="description" content="Jogo de cartas para aprender os sons e a escrita do hiragana japonês: flashcards, quiz de som, jogo da memória e prática de escrita.">
+  <meta name="theme-color" content="#0d0a1a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div id="petals" aria-hidden="true"></div>
+
+  <main id="app">
+
+    <!-- ===================== INÍCIO ===================== -->
+    <section id="screen-home" class="screen active">
+      <header class="hero">
+        <div class="hero-badge">日本語 · 入門</div>
+        <h1><span class="jp">ひらがな</span> Cartas</h1>
+        <p class="subtitle">Aprenda o <strong>som</strong> e a <strong>escrita</strong> de cada caractere jogando com cartas.</p>
+        <div class="stats">
+          <div class="stat"><span id="stat-mastered">0</span><small>dominados</small></div>
+          <div class="stat"><span id="stat-seen">0</span><small>praticados</small></div>
+          <div class="stat"><span id="stat-words">0</span><small>palavras dominadas</small></div>
+          <div class="stat"><span id="stat-best">0</span><small>melhor sequência</small></div>
+        </div>
+      </header>
+
+      <!-- Seletor de fases (preenchido pelo app.js) -->
+      <nav class="phase-nav" id="phase-nav" aria-label="Fases de aprendizagem"></nav>
+
+      <section class="panel phase-panel" data-phase-panel="1" aria-labelledby="sel-title">
+        <div class="panel-head">
+          <h2 id="sel-title"><span class="step">1</span> Escolha as famílias</h2>
+          <div class="quick">
+            <button class="pill" data-quick="basic" id="quick-basic">Básicos</button>
+            <button class="pill" data-quick="dakuten" id="quick-dakuten">゛゜ Dakuten</button>
+            <button class="pill" data-quick="all" id="quick-all">Todos</button>
+            <button class="pill ghost" data-quick="none" id="quick-none">Limpar</button>
+          </div>
+        </div>
+        <div id="row-chips" class="row-chips"></div>
+        <p class="sel-info"><span id="sel-count">0</span> caracteres selecionados</p>
+      </section>
+
+      <section class="panel phase-panel" data-phase-panel="1" aria-labelledby="mode-title">
+        <h2 id="mode-title"><span class="step">2</span> Escolha um jogo</h2>
+        <div class="modes">
+          <button class="mode-card" data-mode="study" id="mode-study" style="--hue:342">
+            <span class="mode-kanji">学</span>
+            <span class="mode-name">Estudar</span>
+            <span class="mode-desc">Vire as cartas: som, dica de pronúncia e palavras de exemplo.</span>
+          </button>
+          <button class="mode-card" data-mode="quiz" id="mode-quiz" style="--hue:262">
+            <span class="mode-kanji">問</span>
+            <span class="mode-name">Quiz</span>
+            <span class="mode-desc">Veja, leia ou <em>ouça</em> e escolha a carta certa. Mantenha a sequência!</span>
+          </button>
+          <button class="mode-card" data-mode="memory" id="mode-memory" style="--hue:190">
+            <span class="mode-kanji">憶</span>
+            <span class="mode-name">Memória</span>
+            <span class="mode-desc">Encontre os pares: caractere ↔ som. Clássico jogo da memória.</span>
+          </button>
+          <button class="mode-card" data-mode="write" id="mode-write" style="--hue:40">
+            <span class="mode-kanji">書</span>
+            <span class="mode-name">Escrever</span>
+            <span class="mode-desc">Desenhe o caractere com o dedo ou mouse e receba uma nota.</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel phase-panel" data-phase-panel="1" aria-labelledby="table-title">
+        <div class="panel-head">
+          <h2 id="table-title">Tabela de progresso</h2>
+          <div class="legend">
+            <span><i class="lv0"></i>novo</span>
+            <span><i class="lv1"></i>aprendendo</span>
+            <span><i class="lv2"></i>bom</span>
+            <span><i class="lv3"></i>dominado</span>
+          </div>
+        </div>
+        <p class="muted small">Toque em um caractere para ver a carta e ouvir o som.</p>
+        <div id="kana-table" class="kana-table"></div>
+        <button id="reset-progress" class="link-btn">Zerar progresso</button>
+      </section>
+
+      <!-- ===== FASE 2: montar palavras ===== -->
+      <section class="panel phase-panel" data-phase-panel="2" id="phase2-panel" aria-labelledby="p2-title">
+        <div class="lock-banner hidden" id="p2-lock"></div>
+        <h2 id="p2-title"><span class="step">2</span> Montar Palavras</h2>
+        <p class="muted">Ouça a palavra, leia as sílabas separadas e junte as cartas de hiragana na ordem certa para formar uma palavra de verdade.</p>
+        <div class="p2-demo" aria-hidden="true">
+          <span class="demo-tile paper"><b>す</b><small>su</small></span>
+          <span class="demo-op">+</span>
+          <span class="demo-tile paper"><b>し</b><small>shi</small></span>
+          <span class="demo-op">=</span>
+          <span class="demo-result"><b class="jp">すし</b><small>🍣 sushi</small></span>
+        </div>
+        <div class="tabs left" id="p2-level-tabs">
+          <button class="tab active" data-blevel="guided" id="p2-level-guided">🔊 + su·shi<small>guiado</small></button>
+          <button class="tab" data-blevel="listen" id="p2-level-listen">🔊 só áudio<small>desafio</small></button>
+        </div>
+        <p class="sel-info" id="p2-avail"></p>
+        <div class="mini-stats" id="p2-stats"></div>
+        <div class="p-actions">
+          <button class="btn btn-next" id="p2-start">Começar a montar ▶</button>
+        </div>
+      </section>
+
+      <!-- ===== FASE 3: significados ===== -->
+      <section class="panel phase-panel" data-phase-panel="3" id="phase3-panel" aria-labelledby="p3-title">
+        <div class="lock-banner hidden" id="p3-lock"></div>
+        <h2 id="p3-title"><span class="step">3</span> Significados</h2>
+        <p class="muted">Leia ou ouça a palavra inteira e escolha o significado. As palavras que você errar vão para a lista de revisão.</p>
+        <div class="tabs left" id="p3-dir-tabs">
+          <button class="tab active" data-mdir="jp2pt" id="p3-dir-jp2pt">ねこ → gato<small>ler</small></button>
+          <button class="tab" data-mdir="s2pt" id="p3-dir-s2pt">🔊 → gato<small>ouvir</small></button>
+          <button class="tab" data-mdir="pt2jp" id="p3-dir-pt2jp">gato → ねこ<small>reconhecer</small></button>
+        </div>
+        <div class="mini-stats" id="p3-stats"></div>
+        <div class="p-actions">
+          <button class="btn btn-next" id="p3-start">Começar o quiz ▶</button>
+          <button class="btn btn-wrong" id="p3-review">Revisar erros</button>
+        </div>
+      </section>
+
+      <section class="panel phase-panel" data-phase-panel="3" aria-labelledby="vocab-title">
+        <div class="panel-head">
+          <h2 id="vocab-title">Vocabulário <span class="count-badge" id="vocab-count">0</span></h2>
+          <div class="legend">
+            <span><i class="lv0"></i>nova</span>
+            <span><i class="lv1"></i>aprendendo</span>
+            <span><i class="lv2"></i>boa</span>
+            <span><i class="lv3"></i>dominada</span>
+          </div>
+        </div>
+        <p class="muted small">Toque em uma palavra para ouvir. Seu progresso nas Fases 2 e 3 muda a cor de cada palavra.</p>
+        <div class="quick vocab-filters" id="vocab-filters"></div>
+        <div class="vocab-grid" id="vocab-grid"></div>
+      </section>
+
+      <!-- Backup do progresso (exportar / importar JSON) -->
+      <section class="backup-bar" aria-labelledby="backup-title">
+        <div class="backup-text">
+          <h3 id="backup-title">💾 Backup do progresso</h3>
+          <p class="muted small">Guarde seu progresso num arquivo .json ou restaure-o em outro navegador ou computador.</p>
+        </div>
+        <div class="backup-actions">
+          <button class="backup-btn" id="export-progress" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg>
+            Exportar Progresso
+          </button>
+          <button class="backup-btn" id="import-progress" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M4 20h16"/></svg>
+            Importar Progresso
+          </button>
+          <input type="file" id="import-file" class="visually-hidden" accept=".json,application/json" tabindex="-1" aria-hidden="true">
+        </div>
+      </section>
+
+      <footer class="footer">がんばって！ · Bons estudos</footer>
+    </section>
+
+    <!-- ===================== ESTUDAR ===================== -->
+    <section id="screen-study" class="screen">
+      <div class="topbar">
+        <button class="back-btn" data-back id="study-back">← Menu</button>
+        <div class="topbar-title"><span class="jp">学</span> Estudar</div>
+        <div class="counter" id="study-counter">1 / 10</div>
+      </div>
+      <div class="progress"><div class="progress-fill" id="study-progress"></div></div>
+
+      <div class="stage">
+        <div class="flashcard" id="flashcard" tabindex="0" role="button" aria-label="Virar carta">
+          <div class="flashcard-inner">
+            <div class="face front paper">
+              <span class="corner-mark">ひらがな</span>
+              <span class="big-kana" id="fc-kana">あ</span>
+              <span class="hint">toque para virar</span>
+              <span class="hanko">音</span>
+            </div>
+            <div class="face back">
+              <span class="small-kana" id="fc-kana-back">あ</span>
+              <span class="big-romaji" id="fc-romaji">a</span>
+              <p class="tip" id="fc-tip"></p>
+              <div class="word">
+                <span class="word-jp" id="fc-word-jp"></span>
+                <span class="word-r" id="fc-word-r"></span>
+                <span class="word-pt" id="fc-word-pt"></span>
+              </div>
+              <span class="strokes-badge" id="fc-strokes"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="icon-btn" id="fc-speak">🔊 Som</button>
+          <button class="icon-btn" id="fc-speak-word">🗣️ Palavra</button>
+        </div>
+        <div class="answer-actions">
+          <button class="btn btn-wrong" id="fc-no">Ainda não 😅</button>
+          <button class="btn btn-right" id="fc-yes">Já sei ✓</button>
+        </div>
+        <p class="kbd-hint">Espaço: virar · ←: ainda não · →: já sei</p>
+      </div>
+    </section>
+
+    <!-- ===================== QUIZ ===================== -->
+    <section id="screen-quiz" class="screen">
+      <div class="topbar">
+        <button class="back-btn" data-back id="quiz-back">← Menu</button>
+        <div class="topbar-title"><span class="jp">問</span> Quiz</div>
+        <div class="hud">
+          <span class="hud-item" title="Pontos">⭐ <b id="quiz-score">0</b></span>
+          <span class="hud-item streak" id="quiz-streak-wrap" title="Sequência">🔥 <b id="quiz-streak">0</b></span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill" id="quiz-progress"></div></div>
+
+      <div class="tabs" id="quiz-tabs" role="tablist">
+        <button class="tab active" data-dir="k2r" id="quiz-dir-k2r">あ → a<small>ler</small></button>
+        <button class="tab" data-dir="r2k" id="quiz-dir-r2k">a → あ<small>reconhecer</small></button>
+        <button class="tab" data-dir="s2k" id="quiz-dir-s2k">🔊 → あ<small>ouvir</small></button>
+      </div>
+
+      <div class="stage">
+        <button class="question-card paper" id="q-card" aria-label="Pergunta"></button>
+        <p class="q-prompt" id="q-prompt">Qual é o som?</p>
+        <div class="options" id="q-options"></div>
+        <p class="kbd-hint">Teclas 1–4 para responder</p>
+      </div>
+    </section>
+
+    <!-- ===================== MEMÓRIA ===================== -->
+    <section id="screen-memory" class="screen">
+      <div class="topbar">
+        <button class="back-btn" data-back id="memory-back">← Menu</button>
+        <div class="topbar-title"><span class="jp">憶</span> Memória</div>
+        <div class="hud">
+          <span class="hud-item" title="Jogadas">🃏 <b id="mem-moves">0</b></span>
+          <span class="hud-item" title="Tempo">⏱️ <b id="mem-time">0:00</b></span>
+        </div>
+      </div>
+      <div class="tabs" id="mem-tabs">
+        <button class="tab active" data-pairs="6" id="mem-pairs-6">6 pares<small>fácil</small></button>
+        <button class="tab" data-pairs="8" id="mem-pairs-8">8 pares<small>médio</small></button>
+        <button class="tab" data-pairs="10" id="mem-pairs-10">10 pares<small>difícil</small></button>
+      </div>
+      <div class="mem-grid" id="mem-grid"></div>
+    </section>
+
+    <!-- ===================== ESCREVER ===================== -->
+    <section id="screen-write" class="screen">
+      <div class="topbar">
+        <button class="back-btn" data-back id="write-back">← Menu</button>
+        <div class="topbar-title"><span class="jp">書</span> Escrever</div>
+        <div class="counter" id="write-counter">1 / 10</div>
+      </div>
+      <div class="progress"><div class="progress-fill" id="write-progress"></div></div>
+
+      <div class="tabs" id="write-tabs">
+        <button class="tab active" data-wmode="trace" id="write-mode-trace">Traçar<small>com modelo</small></button>
+        <button class="tab" data-wmode="recall" id="write-mode-recall">De memória<small>sem modelo</small></button>
+      </div>
+
+      <div class="write-layout">
+        <aside class="write-prompt paper">
+          <span class="wp-label">Escreva</span>
+          <span class="wp-romaji" id="w-romaji">a</span>
+          <span class="wp-strokes" id="w-strokes">3 traços</span>
+          <button class="icon-btn dark" id="w-speak">🔊 Ouvir</button>
+          <span class="wp-kana-reveal" id="w-reveal"></span>
+        </aside>
+
+        <div class="write-main">
+          <div class="canvas-wrap paper" id="canvas-wrap">
+            <canvas id="write-canvas" aria-label="Área de desenho"></canvas>
+          </div>
+          <div class="write-tools">
+            <button class="icon-btn" id="w-undo">↶ Desfazer</button>
+            <button class="icon-btn" id="w-clear">🧽 Limpar</button>
+            <button class="btn btn-right" id="w-check">Verificar ✓</button>
+            <button class="btn btn-next" id="w-next">Próximo →</button>
+          </div>
+          <div class="write-feedback" id="w-feedback" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== FASE 2: MONTAR ===================== -->
+    <section id="screen-build" class="screen">
+      <div class="topbar">
+        <button class="back-btn" data-back id="build-back">← Menu</button>
+        <div class="topbar-title"><span class="jp">組</span> Montar Palavras</div>
+        <div class="hud">
+          <span class="hud-item" title="Pontos">⭐ <b id="build-score">0</b></span>
+          <span class="hud-item streak" id="build-streak-wrap" title="Sequência">🔥 <b id="build-streak">0</b></span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill" id="build-progress"></div></div>
+
+      <div class="stage">
+        <div class="build-clue paper">
+          <span class="clue-label" id="b-counter">Palavra 1 / 8</span>
+          <div class="clue-audio">
+            <button class="audio-btn" id="b-play" aria-label="Ouvir a palavra">🔊</button>
+            <button class="icon-btn dark" id="b-slow">🐢 Sílaba por sílaba</button>
+          </div>
+          <span class="clue-syll" id="b-syll"></span>
+        </div>
+        <div class="slots" id="b-slots" aria-label="Casas da palavra"></div>
+        <div class="bank" id="b-bank" aria-label="Cartas disponíveis"></div>
+        <div class="build-actions">
+          <button class="icon-btn" id="b-undo">⌫ Apagar</button>
+          <button class="icon-btn" id="b-clear">🧽 Limpar</button>
+          <button class="btn btn-right" id="b-check">Verificar ✓</button>
+          <button class="btn btn-next hidden" id="b-next">Próxima →</button>
+        </div>
+        <div class="write-feedback" id="b-feedback" aria-live="polite"></div>
+        <p class="kbd-hint">1–8: escolher carta · Backspace: apagar · Enter: verificar · Espaço: ouvir</p>
+      </div>
+    </section>
+
+    <!-- ===================== FASE 3: SIGNIFICADOS ===================== -->
+    <section id="screen-meaning" class="screen">
+      <div class="topbar">
+        <button class="back-btn" data-back id="meaning-back">← Menu</button>
+        <div class="topbar-title"><span class="jp">意</span> <span id="m-title">Significados</span></div>
+        <div class="hud">
+          <span class="hud-item" title="Pontos">⭐ <b id="m-score">0</b></span>
+          <span class="hud-item streak" id="m-streak-wrap" title="Sequência">🔥 <b id="m-streak">0</b></span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill" id="m-progress"></div></div>
+
+      <div class="stage">
+        <button class="question-card m-card paper" id="m-card" aria-label="Pergunta"></button>
+        <p class="q-prompt" id="m-prompt"></p>
+        <div class="options" id="m-options"></div>
+        <div class="m-reveal" id="m-reveal" aria-live="polite"></div>
+        <p class="kbd-hint">Teclas 1–4 para responder · Espaço: ouvir</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== MODAIS ===================== -->
+  <div class="modal" id="detail-modal" aria-hidden="true">
+    <div class="modal-card detail-card">
+      <button class="modal-close" data-close id="detail-close" aria-label="Fechar">✕</button>
+      <div class="detail-paper paper">
+        <span class="detail-kana" id="d-kana"></span>
+        <span class="hanko">字</span>
+      </div>
+      <div class="detail-info">
+        <h2 class="detail-romaji" id="d-romaji"></h2>
+        <p class="tip" id="d-tip"></p>
+        <div class="word light">
+          <span class="word-jp" id="d-word-jp"></span>
+          <span class="word-r" id="d-word-r"></span>
+          <span class="word-pt" id="d-word-pt"></span>
+        </div>
+        <p class="muted small" id="d-meta"></p>
+        <div class="detail-actions">
+          <button class="icon-btn" id="d-speak">🔊 Som</button>
+          <button class="icon-btn" id="d-speak-word">🗣️ Palavra</button>
+          <button class="icon-btn" id="d-write">✍️ Praticar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="summary-modal" aria-hidden="true">
+    <div class="modal-card summary-card">
+      <div class="summary-kanji" id="sum-kanji">完</div>
+      <h2 id="sum-title">Muito bem!</h2>
+      <div class="sum-big"><span id="sum-big"></span><small id="sum-big-label"></small></div>
+      <ul class="sum-lines" id="sum-lines"></ul>
+      <div class="sum-mistakes" id="sum-mistakes"></div>
+      <div class="sum-actions" id="sum-actions"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <div id="confetti" aria-hidden="true"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
